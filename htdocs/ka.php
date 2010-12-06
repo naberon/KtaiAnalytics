@@ -18,7 +18,7 @@ define("COOKIE_USER_PERSISTENCE", 63072000);
 
 // The last octect of the IP address is removed to anonymize the user.
 function getIP($remoteAddress) {
-    if (empty($remoteAddress)) {
+    if(empty($remoteAddress)) {
         return "";
     }
 
@@ -128,53 +128,48 @@ function sendRequestToGoogleAnalytics($utmUrl) {
 // makes a server side request to Google Analytics and writes the transparent
 // gif byte data to the response.
 function trackPageView() {
-    $domainName = $_SERVER["SERVER_NAME"];
-    if (empty($domainName)) {
-        $domainName = "";
+    // $GET is non decode get parameter
+    $GET = array();
+    $get_params = preg_split("/&/", $_SERVER['QUERY_STRING']);
+    foreach($get_params as $param) {
+        list($key, $val) = preg_split("/=/", $param);
+        $GET[$key] = $val;
     }
+
+    $domainName = isset($_SERVER["SERVER_NAME"]) ? urlencode($_SERVER["SERVER_NAME"]) : '';
 
     // Get the referrer from the utmr parameter, this is the referrer to the
     // page that contains the tracking pixel, not the referrer for tracking
     // pixel.
-    $documentReferer = $_GET["utmr"];
-    if (empty($documentReferer) && $documentReferer !== "0") {
+    $documentReferer = isset($GET["utmr"]) ? $GET["utmr"] : '';
+    if(empty($documentReferer) && $documentReferer !== "0") {
         $documentReferer = "-";
-    } else {
-        $documentReferer = urldecode($documentReferer);
     }
-    $documentPath = $_GET["utmp"];
-    if (empty($documentPath)) {
-        $documentPath = "";
-    } else {
-        $documentPath = urldecode($documentPath);
-    }
+    $documentPath = isset($GET["utmp"]) ? $GET["utmp"] : '';
+    $pageTitle = isset($GET["utmdt"]) ? $GET["utmdt"] : '';
+    $utmt = isset($GET["utmt"]) ? $GET["utmt"] : '';
 
-    $pageTitle = $_GET["utmdt"];
-    if (empty($pageTitle)) {
-        $pageTitle = "";
-    } else {
-        $pageTitle = urldecode($pageTitle);
-    }
+    $utme = isset($GET["utme"]) ? $GET["utme"] : '';
 
-    $account = $_GET["utmac"];
+    $account = $GET["utmac"];
 
     $visitorId = getVisitorId();
 
     $utmGifLocation = "http://www.google-analytics.com/__utm.gif";
 
     // Construct the gif hit url.
-    $utmUrl = $utmGifLocation . "?" .
-        "utmwv=" . VERSION .
+    $utmUrl = "{$utmGifLocation}?utmwv=" . VERSION .
         "&utmn=" . getRandomNumber() .
-        "&utmhn=" . urlencode($domainName) .
-        "&utmr=" . urlencode($documentReferer) .
-        "&utmp=" . urlencode($documentPath) .
-        "&utmac=" . $account .
+        "&utmhn={$domainName}" .
+        "&utmr={$documentReferer}" .
+        "&utmp={$documentPath}" .
+        "&utmac={$account}" .
         "&utmcc=__utma%3D999.999.999.999.999.1%3B" .
-        "&utmvid=" . $visitorId .
+        "&utmvid={$visitorId}" .
         "&utmip=" . getIP($_SERVER["REMOTE_ADDR"]);
 
-    $utmUrl .= "&utmdt=" . urlencode($pageTitle);
+    if(!empty($utme)) $utmUrl .= "&utme={$utme}";
+    if(!empty($pageTitle)) $utmUrl .= "&utmdt={$pageTitle}";
 
     sendRequestToGoogleAnalytics($utmUrl);
 
