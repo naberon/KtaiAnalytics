@@ -39,23 +39,27 @@ KtaiAnalyticsでは、"機能の追加"と"使い勝手の改善"を目指しま
 
 ## クラスドキュメント
 
-### メソッド
-
-#### KtaiAnalytics::\_trackPageview($opt\_pageURL)
+### KtaiAnalytics::\_trackPageview($opt\_pageURL)
 **$opt_pageURL** で指定されたページURLでトラッキングを行います。指定が無い場合は、自動的に現在のURLでトラッキング。
 
-#### KtaiAnalytics::\_setAccount($accountId)
+
+### KtaiAnalytics::\_setAccount($accountId)
 **$accountId** で指定されたトラッキング オブジェクトのウェブ プロパティ ID を設定します。
 
-#### KtaiAnalytics::\_setTitle($pageTitle)
+
+### KtaiAnalytics::\_setTitle($pageTitle)
 **$pageTitle** で指定されたページタイトルを設定します。
 
-### 変数
 
-#### KtaiAnalytics::img\_path
+### KtaiAnalytics::\_trackEvent($category, $action, $opt\_label, $opt\_value)
+イベントトラッキングの設定します。
+
+
+### KtaiAnalytics::img\_path
 ka.php のパスを指定します。デフォルトはドメインルート(/ka.php)です。
 
-#### KtaiAnalytics::debug
+
+### KtaiAnalytics::debug
 TRUEにする事で、ka.phpのレスポンスヘッダにトラッキングリクエストを出力します。デフォルトはfalseです。
 
 

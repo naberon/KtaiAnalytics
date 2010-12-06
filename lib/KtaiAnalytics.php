@@ -41,6 +41,13 @@ class KtaiAnalytics
     private $pageTitle;
 
     /**
+     * Event tracking
+     * @access private
+     * @var string
+     */
+    private $eventData = array();
+
+    /**
      * tracking page URL
      * @access private
      * @var string
@@ -85,6 +92,27 @@ class KtaiAnalytics
     function _setTitle($pageTitle='')
     {
         $this->pageTitle = $pageTitle;
+        return true;
+    }
+
+    /**
+     * set event.
+     *
+     * @param string $category   event category
+     * @param string $action     event action
+     * @param string $opt_label  event info
+     * @param int    $opt_value  event value
+     * @return boolean
+     */
+    function _trackEvent($category, $action, $opt_label, $opt_value)
+    {
+        if(empty($category) OR empty($action)) return false;
+        $this->eventData[] = array(
+            'category' => $category,
+            'action'  => $action,
+            'label' => $opt_label,
+            'value' => $opt_value
+        );
         return true;
     }
 
@@ -137,7 +165,12 @@ class KtaiAnalytics
         if (true === $this->debug) $url .= "&utmdebug=ON";
 
         if(!empty($this->pageTitle)) $url .= "&utmdt=" . urlencode($this->pageTitle);
-        //$url .= "&utmdt=" . urlencode("mobile|test2");
+
+        // event
+        foreach($this->eventData as $event) {
+            $utme = "&utmt=event&utme=5(" . urlencode($event['category']) . '*' . urlencode($event['action']) . '*' . urlencode($event['label']) . ')(' . urlencode($event['value']) . ')';
+            $this->pageviewURL[] = $url . $utme;
+        }
 
         $this->pageviewURL[]  = $url;
         return true;
