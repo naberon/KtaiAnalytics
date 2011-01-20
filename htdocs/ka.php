@@ -1,8 +1,12 @@
 <?php
 
 /**
-  Copyright 2009 Google Inc. All Rights Reserved.
-**/
+ * KtaiAnalytics, Google Analytics tracking for Ktai (Japanese mobile phone)
+ * 
+ * @package    ka.php
+ * @author     naberon <naberon86@gmail.com>
+ * @license    MIT License (http://www.opensource.org/licenses/mit-license.php)
+ */
 
 // Tracker version.
 define("VERSION", "4.4sh");

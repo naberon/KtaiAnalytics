@@ -48,6 +48,19 @@ class KtaiAnalytics
     private $eventData = array();
 
     /**
+     * Custom Var list
+     * @access private
+     * @var string
+     */
+    private $CustomVars = array(
+        1 => NULL,
+        2 => NULL,
+        3 => NULL,
+        4 => NULL,
+        5 => NULL
+    );
+
+    /**
      * tracking page URL
      * @access private
      * @var string
@@ -81,6 +94,27 @@ class KtaiAnalytics
             echo 'Format ERROR: Cannot set web property ID. use `MO-XXXXX-YY`.<br />';
             return false;
         }
+    }
+
+    /**
+     * set Custom Var.
+     *
+     * @param integer $index Custom var slot [1-5]
+     * @param string $name Custom var name
+     * @param string $value Custom var value
+     * @param integer $opt_scope scope 1.user 2.session 3.page
+     * @return boolean
+     */
+    function _setCustomVar($index, $name, $value, $opt_scope)
+    {
+        if(1 > $index AND 5 < $index) return false;
+
+        $this->CustomVars[$index] = array(
+            'name' => urlencode($name),
+            'value' => urlencode($value),
+            'scope' => $opt_scope
+        );
+        return true;
     }
 
     /**
@@ -164,14 +198,22 @@ class KtaiAnalytics
 
         if (true === $this->debug) $url .= "&utmdebug=ON";
 
+        // Custom Var
+        $CustomVarURL = $this->__createCustomVar();
+
+        // Page title
         if(!empty($this->pageTitle)) $url .= "&utmdt=" . urlencode($this->pageTitle);
 
         // event
         foreach($this->eventData as $event) {
-            $utme = "&utmt=event&utme=5(" . urlencode($event['category']) . '*' . urlencode($event['action']) . '*' . urlencode($event['label']) . ')(' . urlencode($event['value']) . ')';
+            $utme = "&utmt=event&utme=5(" . urlencode($event['category']) . '*' . 
+                urlencode($event['action']) . '*' . 
+                urlencode($event['label']) . ')(' . 
+                urlencode($event['value']) . ')' . $CustomVarURL;
             $this->pageviewURL[] = $url . $utme;
         }
 
+        if(!empty($CustomVarURL)) $url .= "&utme={$CustomVarURL}"
         $this->pageviewURL[]  = $url;
         return true;
     }
@@ -188,6 +230,46 @@ class KtaiAnalytics
             echo '<img src="' . $url . '" alt="" />';
         }
         return true;
+    }
+
+    /**
+     * create CustomVar tracking URL
+     * @return string CustomVar tracking URL
+     */
+    private
+    function __createCustomVar()
+    {
+        $url = "";
+        $name = "";
+        $val = "";
+        $scope = "";
+        $emptyFlg  = false; // not set slot flag
+        $scopeFlg  = false; // scope 3 flag
+        foreach($this->CustomVars as $index => $CustomVar) {
+            if(is_null($CustomVar)) {
+                $emptyFlg = true;
+                $scopeFlg = true;
+                continue;
+            }
+            if(1 === $index) {
+                $name .= $CustomVar['name'];
+                $val .= $CustomVar['value'];
+                if(3 !== $CustomVar['scope']) $scope .= $CustomVar['scope'];
+            } else {
+                $name .= ($emptyFlg) ? "*{$index}!" . urlencode($CustomVar['name']) : "*" . urlencode($CustomVar['name']);
+                $val .= ($emptyFlg) ? "*{$index}!" . urlencode($CustomVar['value']) : "*" . urlencode($CustomVar['value']);
+                if(3  === $CustomVar['scope']) {
+                    $scopeFlg = true;
+                } else {
+                    $scope .= ($scopeFlg) ? "*{$index}!{$CustomVar['scope']}" : "*{$CustomVar['scope']}";
+                }
+            }
+        }
+
+        if(!empty($name)) $url .= "8({$name})";
+        if(!empty($val)) $url .= "9({$val})";
+        if(!empty($scope)) $url .= "11({$scope})";
+        return $url;
     }
 
 // private function }}} 
