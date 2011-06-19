@@ -185,5 +185,66 @@ function trackPageView() {
     // Finally write the gif data to the response.
     writeGifData();
 }
-trackPageView();
+
+// Track a transaction, 
+// makes a server side request to Google Analytics and writes the transparent
+// gif byte data to the response.
+function trackTranItem() {
+    // $GET is non decode get parameter
+    $GET = array();
+    $get_params = preg_split("/&/", $_SERVER['QUERY_STRING']);
+    foreach($get_params as $param) {
+        list($key, $val) = preg_split("/=/", $param);
+        $GET[$key] = $val;
+    }
+
+    $domainName = isset($_SERVER["SERVER_NAME"]) ? urlencode($_SERVER["SERVER_NAME"]) : '';
+    $account = $GET["utmac"];
+
+    $utmtid = isset($GET["utmtid"]) ? $GET["utmtid"] : ''; // order ID
+    $utmt   = isset($GET["utmt"]) ? $GET["utmt"] : ''; // tran or item
+
+    $utmGifLocation = "http://www.google-analytics.com/__utm.gif";
+    $utmUrl = "{$utmGifLocation}?utmwv=" . VERSION .
+        "&utmn=" . getRandomNumber() .
+        "&utmvid=" . getVisitorId() .
+        "&utmcc=__utma%3D999.999.999.999.999.1%3B" .
+        "&utmhn={$domainName}" .
+        "&utmt={$utmt}" .
+        "&utmtid={$utmtid}" .
+        "&utmac={$account}";
+
+    if('tran' === $utmt) {
+        $utmUrl .= "&utmtst={$GET["utmtst"]}". // affiliation store
+                   "&utmtto={$GET["utmtto"]}". // total price
+                   "&utmttx={$GET["utmttx"]}". // tax
+                   "&utmtsp={$GET["utmtsp"]}". // shipping
+                   "&utmtci={$GET["utmtci"]}". // city
+                   "&utmtrg={$GET["utmtrg"]}". // state
+                   "&utmtco={$GET["utmtco"]}"; // country
+    } else if('item' === $utmt) {
+        $utmUrl .= "&utmipc={$GET["utmipc"]}". // SKU code
+                   "&utmipn={$GET["utmipn"]}". // Product name
+                   "&utmiva={$GET["utmiva"]}". // Product category
+                   "&utmipr={$GET["utmipr"]}". // Product price
+                   "&utmiqt={$GET["utmiqt"]}"; // Purchase quantity
+    }
+
+    sendRequestToGoogleAnalytics($utmUrl);
+
+    // If the debug parameter is on, add a header to the response that contains
+    // the url that was used to contact Google Analytics.
+    if (!empty($_GET["utmdebug"])) {
+        header("X-GA-MOBILE-URL:" . $utmUrl);
+    }
+    // Finally write the gif data to the response.
+    writeGifData();
+}
+
+$utmt = isset($_GET['utmt']) ? $_GET['utmt'] : NULL;
+if('item' !== $utmt AND 'tran' !== $utmt) {
+    trackPageView();
+} else {
+    trackTranItem();
+}
 

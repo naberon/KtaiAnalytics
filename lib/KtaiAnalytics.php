@@ -43,7 +43,7 @@ class KtaiAnalytics
     /**
      * Event tracking
      * @access private
-     * @var string
+     * @var array
      */
     private $eventData = array();
 
@@ -59,6 +59,13 @@ class KtaiAnalytics
         4 => NULL,
         5 => NULL
     );
+	
+	/**
+     * Ecommerce tracking
+     * @access private
+     * @var array
+     */
+    private $transData = array();
 
     /**
      * tracking page URL
@@ -73,6 +80,13 @@ class KtaiAnalytics
      * @var array
      */
     private $pageviewURL = array();
+
+	/**
+     * Ecommerce tracking URL
+     * @access private
+     * @var array
+     */
+    private $tranItemURL = array();
 
 // }}} properties
     
@@ -164,7 +178,77 @@ class KtaiAnalytics
         }
         if(!is_null($opt_pageURL)) $this->opt_pageURL = $opt_pageURL;
         $this->__createPageviewURL();
-        $this->__renderPageviewImg();
+		$this->__renderPageviewImg($this->pageviewURL);
+        return true;
+    }
+
+    /**
+     * Creates a transaction object
+     *
+     * @param string $orderId      order ID
+     * @param string $affiliation  affiliation store
+     * @param string $total        total price
+     * @param string $tax          tax
+     * @param string $shipping     shipping
+     * @param string $city         city
+     * @param string $state        state
+     * @param string $country      country
+     * @return boolean
+     */
+    function _addTrans($orderId, $affiliation, $total, $tax, $shipping, $city, $state, $country)
+    {
+        if(empty($orderId) OR empty($total)) return false;
+        $this->transData[$orderId] = array(
+            'affiliation' => $affiliation,
+            'total'  => $total,
+            'tax' => $tax,
+            'shipping' => $shipping,
+            'city' => $city,
+            'state' => $state,
+            'country' => $country,
+            'items'  => array()
+        );
+        return true;
+    }
+
+    /**
+     * set Item for transaction object
+     *
+     * @param string $orderId   order ID
+     * @param string $sku       SKU code
+     * @param string $name      Product name
+     * @param string $category  Product category
+     * @param string $price     Product price
+     * @param string $quantity  Purchase quantity
+     * @return boolean
+     */
+    function _addItem($orderId, $sku, $name, $category, $price, $quantity)
+    {
+        if(empty($sku) OR empty($price) OR empty($quantity)) return false;
+        $this->transData[$orderId]['items'][] = array(
+            'sku' => $sku,
+            'name'  => $name,
+            'category'  => $category,
+            'price'  => $price,
+            'quantity'  => $quantity
+        );
+        return true;
+    }
+
+    /**
+     * render transaction tracking gif
+     *
+     * @return boolean
+     */
+    function _trackTrans()
+    {
+        if(is_null($this->account)) {
+            echo 'Cannot tracking: Not set web property ID.<br />';
+            return false;
+        }
+
+        $this->__createTranItemURL();
+        $this->__renderPageviewImg($this->tranItemURL);
         return true;
     }
 
@@ -213,8 +297,36 @@ class KtaiAnalytics
             $this->pageviewURL[] = $url . $utme;
         }
 
-        if(!empty($CustomVarURL)) $url .= "&utme={$CustomVarURL}"
+        if(!empty($CustomVarURL)) $url .= "&utme={$CustomVarURL}";
         $this->pageviewURL[]  = $url;
+        return true;
+    }
+	
+	/**
+     * ka.php img Transaction URL create
+     */
+    private
+    function __createTranItemURL()
+    {
+        $URLs = array();
+        $url = "";
+        $url .= "{$this->img_path}?utmac={$this->account}&guid=ON";
+        $url .= "&utmn=" . rand(0, 0x7fffffff);
+        if (true === $this->debug) $url .= "&utmdebug=ON";
+
+        foreach($this->transData as $orderId => $event) {
+            $tranURL  = "&utmt=tran&utmtid={$orderId}&utmtst=". urlencode($event['affiliation'])
+                . "&utmtto={$event['total']}&utmttx={$event['tax']}&utmtsp={$event['shipping']}"
+                . "&utmtci=". urlencode($event['city']) ."&utmtrg=". urlencode($event['state']) ."&utmtco=". urlencode($event['country']);
+            $this->tranItemURL[] = $url . $tranURL;
+
+            foreach($event['items'] as $item) {
+                $itemURL = "&utmt=item&utmtid={$orderId}&utmipc=" . urlencode($item['sku'])
+                  . "&utmipn=" . urlencode($item['name']) . "&utmiva=" . urlencode($item['category'])
+                  . "&utmipr={$item['price']}&utmiqt={$item['quantity']}";
+                $this->tranItemURL[] = $url . $itemURL;
+            }
+        }
         return true;
     }
 
@@ -224,9 +336,9 @@ class KtaiAnalytics
      * @return boolean 
      */
     private
-    function __renderPageviewImg()
+    function __renderPageviewImg($imgURL)
     {
-        foreach($this->pageviewURL as $url) {
+        foreach($imgURL as $url) {
             echo '<img src="' . $url . '" alt="" />';
         }
         return true;

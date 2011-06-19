@@ -13,6 +13,7 @@
 <div><a href="./02.php">02.┴╪▒zURLдв╞╥щ╦ч</a></div>
 <div><a href="./03.php">03.╡мчщддв╞╥щ╦ч</a></div>
 <div><a href="./04.php">04.╤╫юя∙о░■</a></div>
+<div><a href="./05.php">05.e ╨о╟╫ дв╞╥щ╦ч</a></div>
 
 </div>
 </body>
